@@ -17,6 +17,7 @@ policy = 'color,translation'
 import lpips
 percept = lpips.PerceptualLoss(model='net-lin', net='vgg', use_gpu=True)
 
+from torch.utils.tensorboard import SummaryWriter
 
 #torch.backends.cudnn.benchmark = True
 
@@ -51,6 +52,7 @@ def train_d(net, data, label="real"):
 
 def train(args):
 
+
     data_root = args.path
     total_iterations = args.iter
     checkpoint = args.ckpt
@@ -67,7 +69,10 @@ def train(args):
     current_iteration = 0
     save_interval = 100
     saved_model_folder, saved_image_folder = get_dir(args)
-    
+ 
+    model_name = f"runs/fastgan_1-7k_examples_{total_iterations}_iter_{batch_size}_batch_size_{im_size}_im_size"
+    writer = SummaryWriter(model_name)
+   
     device = torch.device("cpu")
     if use_cuda:
         device = torch.device("cuda:0")
@@ -158,6 +163,8 @@ def train(args):
 
         if iteration % 100 == 0:
             print("GAN: loss d: %.5f    loss g: %.5f"%(err_dr, -err_g.item()))
+            writer.add_scalar('gan_loss', -err_g.item(), iteration)
+            writer.add_scalar('disc_loss', err_dr, iteration)
 
         if iteration % (save_interval*10) == 0:
             backup_para = copy_G_params(netG)
